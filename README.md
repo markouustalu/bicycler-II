@@ -9,7 +9,7 @@ Luckily i was able to get the NO2 protocol description for the Sabvoton SVMC con
 The screen has pretty much everything put on the single view. Nothing else is implemented, no menus or anything. The only thing is the "unlimited mode". During the first 5 seconds after boot you have to click the up button three times to remove PAS lvl 5 and 25kmh limit. This can only be activated and not deactivated. Deactivation is done using power cycle. If you miss the 5s window, the only option to try again is to do a power cycle.
 
 ### Screen explanation
-![Sample screen](TBD)
+![Sample screen](https://raw.githubusercontent.com/markouustalu/bicycler-II/refs/heads/main/display.jpg)
 
 1. Speed in km/h (not configurable, change programming if needed)
 2. PAS lvl and motor temp in C (not configrable, change programming if needed)

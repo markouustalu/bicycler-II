@@ -128,7 +128,11 @@ void NO2Protocol::updateCalculatedValues() {
   // Calculate current and cumulative Ah
   uint8_t currentUnit = (controllerMsg.runningCurrent >> 8) & 0x40;
   current = (float)(controllerMsg.runningCurrent & 0xFF) / (currentUnit ? 10.0f : 1.0f);
-  cumulativeAh += current * (millis() - lastMeasurementTime) / 3600000.0f; // Ah
+  if (controllerMsg.controllerStatus2 & STATUS2_BRAKE_ACTIVE) {
+    cumulativeAh -= current * (millis() - lastMeasurementTime) / 3600000.0f; // Ah (regenerative braking)
+  } else {
+    cumulativeAh += current * (millis() - lastMeasurementTime) / 3600000.0f; // Ah
+  }
   if (!unlimitedMode && current > 5) {
     current = 5;
   }

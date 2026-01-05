@@ -4,12 +4,16 @@
 #include <Arduino.h>
 #include <EEPROM.h>
 
+#define CONFIG_ARRAY_SIZE 10
+
 // Configuration structure
 struct ConfigData {
   //odometer is updates every km, so implement some wear leveling over the array of 10 elements
   //to avoid wearing out a single eeprom cell
-  uint16_t odometerArray[10];
-  uint16_t wheelDiameter;       // 0-255 (represents 10-35 inches in 0.1 increments)
+  uint16_t odometer;
+  uint16_t cumulativeAh;
+  uint16_t tripMeter; // in 10 meter units
+  uint16_t sessionTimeS; // time elapsed since boot in S
 };
 
 class Config {
@@ -18,19 +22,22 @@ public:
   
   void load();
   void save();
+  void manualSave();
   
   // Getters
-  uint8_t getWheelDiameter() const { return data.wheelDiameter; }
-  uint16_t getOdometer() const;
+  uint16_t getOdometer();
+  float getCumulativeAh() const;
+  unsigned long getTripMeter() const;
+  unsigned long getSessionTimeMs() const;
   
   // Setters
-  void setWheelDiameter(uint16_t diameter);
   void setOdometer(uint16_t odoMeter);
+  void setCumulativeAh(float ah);
+  void setTripMeter(unsigned long tm);
+  void setSessionTimeMs(unsigned long t);
   
 private:
   ConfigData data;
-  uint8_t eepromAddress;
-
 };
 
 #endif

@@ -22,7 +22,8 @@ private:
     // static void buttonUpLongClickDetected(Button2& btn);
     // static void buttonUpLongClickEnd(Button2& btn);
     static void buttonDownClick(Button2& btn);
-    static void buttonDownTripleClick(Button2& btn);
+    static void buttonMTripleClick(Button2& btn);
+    static void buttonMDoubleClick(Button2& btn);
     static Buttons* instance;
 };
 

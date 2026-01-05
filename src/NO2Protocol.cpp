@@ -10,7 +10,8 @@ NO2Protocol::NO2Protocol() :
   PASRequestedLevel(5),
   PASActualLevel(5),
   maxPASLevel(5),
-  cumulativeAh(0.0f)
+  cumulativeAh(0.0f),
+  sessionTimeMs(0)
 {
   // Initialize message structures to zero
   memset(&controllerMsg, 0, sizeof(ControllerMessage));
@@ -21,6 +22,9 @@ void NO2Protocol::begin(SoftwareSerial* serial, Config* config) {
   this->serial = serial;
   this->config = config;
   this->odoMeter = config->getOdometer();
+  this->cumulativeAh = config->getCumulativeAh();
+  this->tripMeter = config->getTripMeter();
+  this->sessionTimeMs = config->getSessionTimeMs();
   initializeInstrumentMessage();
 }
 
@@ -116,6 +120,7 @@ void NO2Protocol::updateCalculatedValues() {
 
   // Update trip meter (in cm)
   tripMeter += (unsigned long)(speedKmh * 100.0f / 3600.0f * (millis() - lastMeasurementTime));
+  config->setTripMeter(tripMeter);
 
   //Update odometer based on trip meter after every kilometer.
   static unsigned long lastOdometerUpdateTripMeter = 0;
@@ -133,10 +138,13 @@ void NO2Protocol::updateCalculatedValues() {
   } else {
     cumulativeAh += current * (millis() - lastMeasurementTime) / 3600000.0f; // Ah
   }
+  config->setCumulativeAh(cumulativeAh);
   if (!unlimitedMode && current > 5) {
     current = 5;
   }
 
+  sessionTimeMs += (millis() - lastMeasurementTime);
+  config->setSessionTimeMs(sessionTimeMs);
   lastMeasurementTime = millis();
 }
 

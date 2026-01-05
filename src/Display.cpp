@@ -10,6 +10,12 @@ void Display::init() {
 
 void Display::loop() {
     // static bool updatingDisplay = false;
+
+    //print the state of protocol->stateChanged
+    //Serial.print("Protocol stateChanged: ");
+    //Serial.println(protocol->stateChanged);
+
+    //return; // Temporarily disable display updates
     static unsigned long lastSpeedNotZero = 0;
     static byte updateState = 0;
     uint16_t averageSpeed = 0;
@@ -32,7 +38,7 @@ void Display::loop() {
     } 
 
     // if (updatingDisplay) {
-    unsigned long totalSeconds;
+    uint16_t totalSeconds;
     uint8_t hours, minutes, seconds;
 
     switch (updateState)
@@ -110,7 +116,7 @@ void Display::loop() {
 
         //Average speed
         u8g2->setFont(u8g2_font_profont12_mr);
-        averageSpeed = (uint16_t)((protocol->getTripMeter() / 1000.0f) / (millis() / 3600000.0f));
+        averageSpeed = (uint16_t)((protocol->getTripMeter() / 1000.0f) / (protocol->getSessionTimeMs() / 3600000.0f));
         u8g2->drawStr(0, 106, u8x8_u16toa(averageSpeed / 100, 2));
         u8g2->drawStr(11, 106, ".");
         u8g2->drawStr(17, 106, u8x8_u16toa(averageSpeed % 100, 2));
@@ -145,7 +151,7 @@ void Display::loop() {
         // }
         
         // Display time elapsed since boot as hh:mm:ss
-        totalSeconds = millis() / 1000;
+        totalSeconds = protocol->getSessionTimeMs() / 1000;
         hours = totalSeconds / 3600;
         minutes = (totalSeconds % 3600) / 60;
         seconds = totalSeconds % 60;

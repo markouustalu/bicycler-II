@@ -16,26 +16,37 @@ Buttons buttons(&protocol);
 Config config;
 
 void setup() {
+    //Serial.begin(115200);
+    //Serial.println("Bicycler-II starting up...");
+
     // Initialize controller communication
     controllerSerial.begin(9600);
+    //Serial.println("Controller serial initialized.");
     
     // Initialize buttons
     buttons.init();
+    //Serial.println("Buttons initialized.");
 
     // Initialize display
     display.init();
-   
+    //Serial.println("Display initialized.");
+
     // Initialize protocol
     protocol.begin(&controllerSerial, &config);
+    //Serial.println("Protocol initialized.");
+
 }
 
 void loop() {
     // Handle button presses
     buttons.loop();
-   
+    //Serial.println("Buttons loop executed.");
+
     // Handle protocol communication
     protocol.loop();
-   
+    //Serial.println("Protocol loop executed.");
+
     // Display update
     display.loop();
+    //Serial.println("Display loop executed.");
 }

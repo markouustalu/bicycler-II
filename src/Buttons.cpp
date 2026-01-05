@@ -14,7 +14,8 @@ void Buttons::init() {
     buttonUp.setClickHandler(buttonUpClick);
     buttonUp.setTripleClickHandler(buttonUpTripleClick);
     buttonDown.setClickHandler(buttonDownClick);
-    buttonDown.setTripleClickHandler(buttonDownTripleClick);
+    buttonM.setTripleClickHandler(buttonMTripleClick);
+    buttonM.setDoubleClickHandler(buttonMDoubleClick);
     // buttonUp.setLongClickDetectedHandler(buttonUpLongClickDetected);
     // buttonUp.setLongClickHandler(buttonUpLongClickEnd);
 }
@@ -58,8 +59,17 @@ void Buttons::buttonDownClick(Button2& btn) {
     }
 }
 
-void Buttons::buttonDownTripleClick(Button2& btn) {
+void Buttons::buttonMTripleClick(Button2& btn) {
     if (instance && instance->protocol) {
-        // Empty for now
+        // Reset in-memory values
+        instance->protocol->setCumulativeAh(0.0f);
+        instance->protocol->setTripMeter(0);
+        instance->protocol->setSessionTimeMs(0);
+    }
+}
+void Buttons::buttonMDoubleClick(Button2& btn) {
+    if (instance && instance->protocol) {
+        // Trigger EEPROM save of current values
+        instance->protocol->config->manualSave();
     }
 }

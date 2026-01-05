@@ -72,6 +72,7 @@ class Config; // Forward declaration
 class NO2Protocol {
 public:
   NO2Protocol();
+  Config* config;
 
   bool stateChanged = false;
   bool unlimitedMode = false;
@@ -90,11 +91,15 @@ public:
   byte getControllerStatus1() const { return controllerMsg.controllerStatus1; }
   byte getControllerStatus2() const { return controllerMsg.controllerStatus2; }
   float getCumulativeAh() const { return cumulativeAh; }
+  unsigned long getSessionTimeMs() const { return sessionTimeMs; }
   
   // Configuration setters
   void setDriveMode(uint8_t mode);
   void setAssistanceLevel(uint8_t level);
   void setUnlimitedMode();
+  void setCumulativeAh(float ah) { cumulativeAh = ah; }
+  void setTripMeter(unsigned long tm) { tripMeter = tm; }
+  void setSessionTimeMs(unsigned long t) { sessionTimeMs = t; }
   // void setCruise(bool mode);
 
   // Configuration getters
@@ -103,7 +108,6 @@ public:
 
 private:
   SoftwareSerial* serial;
-  Config* config;
   
   ControllerMessage controllerMsg;
   InstrumentMessage instrumentMsg;
@@ -113,6 +117,7 @@ private:
   float current, cumulativeAh;
   unsigned long tripMeter; // in centimeters
   uint16_t odoMeter; // in kilometers
+  unsigned long sessionTimeMs; // time elapsed since boot
   
   // Configuration
   uint8_t driveMode;

@@ -124,6 +124,12 @@ void NO2Protocol::updateCalculatedValues() {
 
   //Update odometer based on trip meter after every kilometer.
   static unsigned long lastOdometerUpdateTripMeter = 0;
+
+  //handle booting from saved state where tripMeter > lastOdometerUpdateTripMeter
+  if (lastOdometerUpdateTripMeter == 0 && tripMeter > 0 && millis() < 500) {
+    lastOdometerUpdateTripMeter = tripMeter - (tripMeter % 100000);
+  }
+
   if (tripMeter - lastOdometerUpdateTripMeter >= 100000) {
     lastOdometerUpdateTripMeter = tripMeter - (tripMeter % 100000);
     odoMeter += 1;

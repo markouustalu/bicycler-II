@@ -16,11 +16,12 @@ void Display::loop() {
     //Serial.println(protocol->stateChanged);
 
     //return; // Temporarily disable display updates
-    static unsigned long lastSpeedNotZero = 0;
+    static unsigned long lastSpeedNotZero = 0, lastDisplayUpdate = 0;
     static byte updateState = 0;
     uint16_t averageSpeed = 0;
     // if (!updatingDisplay && protocol->stateChanged) {
-    if (!updateState && protocol->stateChanged) {
+    if (!updateState && (protocol->stateChanged || millis() - lastDisplayUpdate > 1000)) {
+        lastDisplayUpdate = millis();
         updateState++;
         protocol->stateChanged = false; // Reset state change flag
         // u8g2->firstPage();

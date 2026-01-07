@@ -11,11 +11,6 @@ void Display::init() {
 void Display::loop() {
     // static bool updatingDisplay = false;
 
-    //print the state of protocol->stateChanged
-    //Serial.print("Protocol stateChanged: ");
-    //Serial.println(protocol->stateChanged);
-
-    //return; // Temporarily disable display updates
     static unsigned long lastSpeedNotZero = 0, lastDisplayUpdate = 0;
     static byte updateState = 0;
     uint16_t averageSpeed = 0;

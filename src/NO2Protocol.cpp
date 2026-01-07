@@ -21,10 +21,11 @@ NO2Protocol::NO2Protocol() :
 void NO2Protocol::begin(SoftwareSerial* serial, Config* config) {
   this->serial = serial;
   this->config = config;
-  this->odoMeter = config->getOdometer();
-  this->cumulativeAh = config->getCumulativeAh();
-  this->tripMeter = config->getTripMeter();
-  this->sessionTimeMs = config->getSessionTimeMs();
+  odoMeter = config->getOdometer();
+  cumulativeAh = config->getCumulativeAh();
+  tripMeter = config->getTripMeter();
+  sessionTimeMs = config->getSessionTimeMs();
+  lastOdometerUpdateTripMeter = tripMeter - (tripMeter % 100000);
   initializeInstrumentMessage();
 }
 
@@ -122,14 +123,6 @@ void NO2Protocol::updateCalculatedValues() {
   tripMeter += (unsigned long)(speedKmh * 100.0f / 3600.0f * (millis() - lastMeasurementTime));
   config->setTripMeter(tripMeter);
 
-  //Update odometer based on trip meter after every kilometer.
-  static unsigned long lastOdometerUpdateTripMeter = 0;
-
-  //handle booting from saved state where tripMeter > lastOdometerUpdateTripMeter
-  if (lastOdometerUpdateTripMeter == 0 && tripMeter > 0 && millis() < 500) {
-    lastOdometerUpdateTripMeter = tripMeter - (tripMeter % 100000);
-  }
-
   if (tripMeter - lastOdometerUpdateTripMeter >= 100000) {
     lastOdometerUpdateTripMeter = tripMeter - (tripMeter % 100000);
     odoMeter += 1;
@@ -210,11 +203,3 @@ void NO2Protocol::setUnlimitedMode() {
   setAssistanceLevel(6);
   unlimitedMode = true;
 }
-
-// void NO2Protocol::setCruise(bool mode) {
-//   if (mode) {
-//     instrumentMsg.controllerSetting |= CONTROLLER_CRUISE_HOLD_MODE;
-//   } else {
-//     instrumentMsg.controllerSetting ^= CONTROLLER_CRUISE_HOLD_MODE;
-//   }
-// }

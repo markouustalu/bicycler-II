@@ -116,6 +116,7 @@ private:
   float speedKmh;
   float current, cumulativeAh;
   unsigned long tripMeter; // in centimeters
+  unsigned long lastOdometerUpdateTripMeter = 0;
   uint16_t odoMeter; // in kilometers
   unsigned long sessionTimeMs; // time elapsed since boot
   

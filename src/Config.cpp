@@ -1,13 +1,6 @@
 #include "Config.h"
 
 Config::Config() {
-  //make one time clearing of eeprom from previous config structure and seed odo with 1717 km
-  // for (uint8_t i = 0; i < (sizeof(data) * CONFIG_ARRAY_SIZE); i++) {
-  //   EEPROM.write(i, 0x00); 
-  // }
-  // data.odometer = (uint16_t)1717;
-  // save();
-
   load();
 }
 
@@ -73,7 +66,7 @@ unsigned long Config::getTripMeter() const {
 }
 
 unsigned long Config::getSessionTimeMs() const {
-  return data.sessionTimeS * 1000;
+  return data.sessionTimeS * 1000L;
 }
 
 void Config::setCumulativeAh(float ah) {

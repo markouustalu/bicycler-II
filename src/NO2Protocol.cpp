@@ -1,17 +1,16 @@
 #include "NO2Protocol.h"
 
-NO2Protocol::NO2Protocol() : 
+NO2Protocol::NO2Protocol() :
   serial(nullptr),
   config(nullptr),
   speedKmh(0.0f),
   current(0.0f),
-  tripMeter(0),
   driveMode(0),
-  PASRequestedLevel(5),
-  PASActualLevel(5),
+  PASLevel(5),
   maxPASLevel(5),
-  cumulativeAh(0.0f),
-  sessionTimeMs(0)
+  messagesPerSecond(0),
+  messageCount(0),
+  lastMessageCountReset(0)
 {
   // Initialize message structures to zero
   memset(&controllerMsg, 0, sizeof(ControllerMessage));
@@ -21,20 +20,19 @@ NO2Protocol::NO2Protocol() :
 void NO2Protocol::begin(SoftwareSerial* serial, Config* config) {
   this->serial = serial;
   this->config = config;
-  odoMeter = config->getOdometer();
-  cumulativeAh = config->getCumulativeAh();
-  tripMeter = config->getTripMeter();
-  sessionTimeMs = config->getSessionTimeMs();
-  lastOdometerUpdateTripMeter = tripMeter - (tripMeter % 100000);
+  lastOdometerUpdateTripMeter = config->getTripMeter() - (config->getTripMeter() % 100000);
   initializeInstrumentMessage();
 }
 
 void NO2Protocol::loop() {
   
   // Handle controller communication
-  static unsigned long sendNextInstrumentMessage = 0;
-  while(serial->available()) {
+  static unsigned long sendNextInstrumentMessage = 0, serialSpamTimeoutUntil = 0;
+  if (!serial->isListening() && millis() > serialSpamTimeoutUntil) {
+    serial->listen(); // Resume listening after timeout
+  }
 
+  while(serial->available()) {
     //Read byte by byte into buffer and push data in like a stack
     for (int i = 0; i < 13; i++) {
       buffer[i] = buffer[i + 1];
@@ -54,14 +52,27 @@ void NO2Protocol::loop() {
       if (calculatedChecksum == 0) {
         processIncomingMessage();  
         sendNextInstrumentMessage = millis() + 15; // Schedule next message send in 15ms
+        messageCount++; // Increment message counter for reliability tracking
       }
-    } 
+    }
+  }
+
+  if (serial->overflow()) {
+    serial->stopListening(); // Stop listening to clear buffer and prevent overflow
+    serialSpamTimeoutUntil = millis() + 80; // Set timeout to prevent serial spam
+  }
+
+  // Update messages per second every 1000ms
+  if (millis() - lastMessageCountReset >= 1000) {
+    messagesPerSecond = messageCount;
+    messageCount = 0;
+    lastMessageCountReset = millis();
   }
 
   // Send response after 15ms of last processed message
   if (millis() > sendNextInstrumentMessage) {
       sendInstrumentMessage();
-      sendNextInstrumentMessage = millis() + 500; // Avoid sending repeatedly
+      sendNextInstrumentMessage = millis() + 500; // Schedule next message send in 500ms to ensure we keep sending messages even if we don't receive any
   }
 }
 
@@ -84,80 +95,50 @@ void NO2Protocol::updateCalculatedValues() {
   speedKmh = 0.0f;
   static const float wheelCircumferenceMeters = (instrumentMsg.wheelDiameter / 10.0f) * 0.0254f * PI * 3.6f;
   static unsigned long lastMeasurementTime = 0;
-  
+
   if (controllerMsg.speedFeedback > 0 && controllerMsg.speedFeedback < 0x7530) {
     // Calculate speed in km/h
     speedKmh = wheelCircumferenceMeters * (1000.0f / (controllerMsg.speedFeedback * (32 / instrumentMsg.motorPoleCount)));
-  }
-
-  // Maximum allowed speed based on PAS level follows the following formula:
-  // maxAllowedSpeed = ((PASLevel - 1) * 5) + 2
-  // For each kmh over the allowe speed, reduce the PAS level by 1
-  // The controller overshoots when reaching target speed, so we have to reduce PAS level to reduce overshoot
-  uint8_t maxAllowedSpeed = ((PASRequestedLevel - 1) * 5) + 2;
-  static bool speedLimitTripped = false;
-  if (unlimitedMode) {
-    if (speedKmh > maxAllowedSpeed) {
-      if(speedKmh - maxAllowedSpeed > PASRequestedLevel - 1) {
-        PASActualLevel = 1;
-      } else {
-        PASActualLevel = PASRequestedLevel - (uint8_t)(speedKmh - maxAllowedSpeed);
-      }
-    } else {
-      PASActualLevel = PASRequestedLevel;
-    }
-  } else {
-    //implement hard speed limiting with hysteresis. 25 is hard limit.
-    if (!speedLimitTripped && speedKmh < 25) {
-      PASActualLevel = PASRequestedLevel;
-    } else if (!speedLimitTripped && speedKmh >= 25) {
-      speedLimitTripped = true;
-      PASActualLevel = 0;
-    } else if (speedLimitTripped && speedKmh < 23) {
-      speedLimitTripped = false;
-      PASActualLevel = PASRequestedLevel;
+    if (speedKmh > 0.0f) {
+      lastActivity = millis();
     }
   }
 
-  // Update trip meter (in cm)
-  tripMeter += (unsigned long)(speedKmh * 100.0f / 3600.0f * (millis() - lastMeasurementTime));
-  config->setTripMeter(tripMeter);
-
-  if (tripMeter - lastOdometerUpdateTripMeter >= 100000) {
-    lastOdometerUpdateTripMeter = tripMeter - (tripMeter % 100000);
-    odoMeter += 1;
-    config->setOdometer(odoMeter);
-  }
-  
   // Calculate current and cumulative Ah
   uint8_t currentUnit = (controllerMsg.runningCurrent >> 8) & 0x40;
   current = (float)(controllerMsg.runningCurrent & 0xFF) / (currentUnit ? 10.0f : 1.0f);
   if (controllerMsg.controllerStatus2 & STATUS2_BRAKE_ACTIVE) {
-    cumulativeAh -= current * (millis() - lastMeasurementTime) / 3600000.0f; // Ah (regenerative braking)
+    config->setCumulativeAh(config->getCumulativeAh() - current * (millis() - lastMeasurementTime) / 3600000.0f); // Ah (regenerative braking)
   } else {
-    cumulativeAh += current * (millis() - lastMeasurementTime) / 3600000.0f; // Ah
+    config->setCumulativeAh(config->getCumulativeAh() + current * (millis() - lastMeasurementTime) / 3600000.0f); // Ah
   }
-  config->setCumulativeAh(cumulativeAh);
   if (!unlimitedMode && current > 5) {
     current = 5;
   }
 
-  sessionTimeMs += (millis() - lastMeasurementTime);
-  config->setSessionTimeMs(sessionTimeMs);
+  // Update trip meter (in cm)
+  config->setTripMeter(config->getTripMeter() + (unsigned long)(speedKmh * 100.0f / 3600.0f * (millis() - lastMeasurementTime)));
+  
+  if (config->getTripMeter() - lastOdometerUpdateTripMeter >= 100000) {
+    lastOdometerUpdateTripMeter = config->getTripMeter() - (config->getTripMeter() % 100000);
+    setSessionTimeMs(getSessionTimeMs());
+    config->setOdometer(config->getOdometer() + 1);
+  }
+
   lastMeasurementTime = millis();
 }
 
 void NO2Protocol::sendInstrumentMessage() {
   // Update instrument message with current settings
   instrumentMsg.driveMode = driveMode;
-  instrumentMsg.PASlevel = PASActualLevel;
-  
+  instrumentMsg.PASlevel = PASLevel;
+
    // Calculate checksum
   instrumentMsg.checksum = 0;
   for (uint8_t i = 0; i < 19; i++) {
     instrumentMsg.checksum ^= ((uint8_t*)&instrumentMsg)[i];
   }
-  
+
   // Send message via serial
   serial->write((uint8_t*)&instrumentMsg, 20);
 }
@@ -167,13 +148,13 @@ void NO2Protocol::initializeInstrumentMessage() {
   instrumentMsg.address = 0x01;
   instrumentMsg.frameLength = 20;
   instrumentMsg.commandNumber = 0x01;
-  
+
   //TODO: set better default values based on what is actually required for my controller
   // Set default values according to protocol
   instrumentMsg.driveMode = driveMode;
-  instrumentMsg.PASlevel = PASActualLevel;
+  instrumentMsg.PASlevel = PASLevel;
   instrumentMsg.controllerSetting = CONTROLLER_POWER_SWITCH; // Controller on, zero start, light on, no fault
-  instrumentMsg.motorPoleCount = 8; 
+  instrumentMsg.motorPoleCount = 8;
   instrumentMsg.wheelDiameter = 260; // 26 inches
   instrumentMsg.PASassistanceSensitivity = 1; // Hall sensor sensitivity
   instrumentMsg.PASassistanceStartIntensity = 0; // Default start intensity
@@ -193,7 +174,7 @@ void NO2Protocol::setDriveMode(uint8_t mode) {
 
 void NO2Protocol::setAssistanceLevel(uint8_t level) {
   if (level <= maxPASLevel && level >= 0) {
-    PASRequestedLevel = level;
+    PASLevel = level;
   }
 }
 

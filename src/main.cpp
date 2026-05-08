@@ -27,7 +27,6 @@ void setup() {
     
     // Initialize protocol
     protocol.begin(&controllerSerial, &config);
-    
 }
 
 void loop() {

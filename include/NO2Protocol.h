@@ -73,9 +73,11 @@ class NO2Protocol {
 public:
   NO2Protocol();
   Config* config;
+  SoftwareSerial* serial;
 
   bool stateChanged = false;
   bool unlimitedMode = false;
+  unsigned long lastActivity = 0;
   
   void begin(SoftwareSerial* serial, Config* config);
   void processIncomingMessage();
@@ -86,47 +88,48 @@ public:
   float getSpeedKmh() const { return speedKmh; }
   float getCurrent() const { return current; }
   byte getTemperature() const { return controllerMsg.motorTemp; }
-  unsigned long getTripMeter() const { return tripMeter; } // in centimeters
-  uint16_t getOdometer() const { return odoMeter; } // in kilometers
+  unsigned long getTripMeter() const { return config->getTripMeter(); } // in centimeters
+  uint16_t getOdometer() const { return config->getOdometer(); } // in kilometers
   byte getControllerStatus1() const { return controllerMsg.controllerStatus1; }
   byte getControllerStatus2() const { return controllerMsg.controllerStatus2; }
-  float getCumulativeAh() const { return cumulativeAh; }
-  unsigned long getSessionTimeMs() const { return sessionTimeMs; }
+  float getCumulativeAh() const { return config->getCumulativeAh(); }
+  unsigned long getSessionTimeMs() const { return config->getSessionTimeMs() + millis() - lastSaveDelta; }
+  uint8_t getMessagesPerSecond() const { return messagesPerSecond; }
   
   // Configuration setters
   void setDriveMode(uint8_t mode);
   void setAssistanceLevel(uint8_t level);
   void setUnlimitedMode();
-  void setCumulativeAh(float ah) { cumulativeAh = ah; }
-  void setTripMeter(unsigned long tm) { tripMeter = tm; }
-  void setSessionTimeMs(unsigned long t) { sessionTimeMs = t; }
+  void setCumulativeAh(float ah) { config->setCumulativeAh(ah); }
+  void setTripMeter(unsigned long tm) { config->setTripMeter(tm); }
+  void setSessionTimeMs(unsigned long t) { lastSaveDelta = millis(); config->setSessionTimeMs(t); }
   // void setCruise(bool mode);
 
   // Configuration getters
   uint8_t getDriveMode() const { return driveMode; }
-  uint8_t getAssistanceLevel() const { return PASActualLevel; }
+  uint8_t getAssistanceLevel() const { return PASLevel; }
 
 private:
-  SoftwareSerial* serial;
-  
   ControllerMessage controllerMsg;
   InstrumentMessage instrumentMsg;
   
   // Calculated values
   float speedKmh;
-  float current, cumulativeAh;
-  unsigned long tripMeter; // in centimeters
-  unsigned long lastOdometerUpdateTripMeter = 0;
-  uint16_t odoMeter; // in kilometers
-  unsigned long sessionTimeMs; // time elapsed since boot
+  float current;
+  unsigned long lastOdometerUpdateTripMeter = 0, lastSaveDelta = 0;
   
   // Configuration
   uint8_t driveMode;
-  uint8_t PASRequestedLevel, PASActualLevel;
+  uint8_t PASLevel;
   uint8_t maxPASLevel;
 
   // Buffer for incoming message
   uint8_t buffer[14];
+
+  // Communication reliability tracking
+  uint8_t messagesPerSecond;
+  uint8_t messageCount;
+  unsigned long lastMessageCountReset;
 
   void updateCalculatedValues();
   void initializeInstrumentMessage();

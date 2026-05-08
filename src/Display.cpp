@@ -11,7 +11,7 @@ void Display::init() {
 void Display::loop() {
     // static bool updatingDisplay = false;
 
-    static unsigned long lastSpeedNotZero = 0, lastDisplayUpdate = 0;
+    static unsigned long lastDisplayUpdate = 0;
     static byte updateState = 0;
     uint16_t averageSpeed = 0;
     // if (!updatingDisplay && protocol->stateChanged) {
@@ -21,12 +21,8 @@ void Display::loop() {
         protocol->stateChanged = false; // Reset state change flag
         // u8g2->firstPage();
         u8g2->clearBuffer(); // Use clearBuffer for full buffer mode
-        
-        if (protocol->getSpeedKmh() > 0) {
-            lastSpeedNotZero = millis();
-        }
-        
-        if (millis() - lastSpeedNotZero > 5000) {
+                
+        if (millis() - protocol->lastActivity > 5000) {
             u8g2->setContrast(0);
         } else {
             u8g2->setContrast(255);
@@ -93,6 +89,13 @@ void Display::loop() {
         updateState++;
         break;
     case 4:
+
+        //temp debugging. display controller processed messager per second.
+        u8g2->setFont(u8g2_font_profont12_mr);
+        u8g2->drawStr(0, 92, u8x8_u16toa(protocol->getMessagesPerSecond(), 1));
+        u8g2->setFont(u8g2_font_profont22_mn);
+        //u8g2->drawStr(6, 95, u8x8_u16toa((int)(protocol->baudRate), 5));
+        //u8g2->drawStr(6, 95, u8x8_u16toa((int)(protocol->serial->available()), 5));
 
         //Wattage. It is a 14S Li-ion battery so max 58.8V. Assume for now that the V is average 50V
         u8g2->setFont(u8g2_font_profont22_mn);

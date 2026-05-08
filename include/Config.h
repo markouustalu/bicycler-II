@@ -23,21 +23,26 @@ public:
   void load();
   void save();
   void manualSave();
+  void initializeEEPROM();
   
   // Getters
-  uint16_t getOdometer();
-  float getCumulativeAh() const;
-  unsigned long getTripMeter() const;
-  unsigned long getSessionTimeMs() const;
+  uint16_t getOdometer() const { return data.odometer; }
+  float getCumulativeAh() const { return cumulativeAh; }
+  unsigned long getTripMeter() const { return tripMeter; }
+  unsigned long getSessionTimeMs() const { return sessionTimeMs; }
   
   // Setters
   void setOdometer(uint16_t odoMeter);
-  void setCumulativeAh(float ah);
-  void setTripMeter(unsigned long tm);
-  void setSessionTimeMs(unsigned long t);
-  
+  void setCumulativeAh(float ah) { cumulativeAh = ah; }
+  void setTripMeter(unsigned long tm) { tripMeter = tm; }
+  void setSessionTimeMs(unsigned long t) { sessionTimeMs = t; }
+
 private:
   ConfigData data;
+  float cumulativeAh;
+  unsigned long tripMeter; // in centimeters
+  unsigned long sessionTimeMs; // time elapsed since boot
+
 };
 
 #endif

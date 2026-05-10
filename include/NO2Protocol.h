@@ -93,7 +93,7 @@ public:
   byte getControllerStatus1() const { return controllerMsg.controllerStatus1; }
   byte getControllerStatus2() const { return controllerMsg.controllerStatus2; }
   float getCumulativeAh() const { return config->getCumulativeAh(); }
-  unsigned long getSessionTimeMs() const { return config->getSessionTimeMs() + millis() - lastSaveDelta; }
+  unsigned long getSessionTimeMs() const { return config->getSessionTimeMs(); }
   uint8_t getMessagesPerSecond() const { return messagesPerSecond; }
   
   // Configuration setters
@@ -101,8 +101,11 @@ public:
   void setAssistanceLevel(uint8_t level);
   void setUnlimitedMode();
   void setCumulativeAh(float ah) { config->setCumulativeAh(ah); }
-  void setTripMeter(unsigned long tm) { config->setTripMeter(tm); }
-  void setSessionTimeMs(unsigned long t) { lastSaveDelta = millis(); config->setSessionTimeMs(t); }
+  void setTripMeter(unsigned long tm) { 
+    config->setTripMeter(tm); 
+    lastOdometerUpdateTripMeter = tm - (tm % 100000);
+  }
+  void setSessionTimeMs(unsigned long t) { config->setSessionTimeMs(t); }
   // void setCruise(bool mode);
 
   // Configuration getters
@@ -116,7 +119,7 @@ private:
   // Calculated values
   float speedKmh;
   float current;
-  unsigned long lastOdometerUpdateTripMeter = 0, lastSaveDelta = 0;
+  unsigned long lastOdometerUpdateTripMeter = 0;
   
   // Configuration
   uint8_t driveMode;

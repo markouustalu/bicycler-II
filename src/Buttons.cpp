@@ -66,7 +66,6 @@ void Buttons::buttonMDoubleClick(Button2& btn) {
     if (instance && instance->protocol) {
         // Trigger EEPROM save of current values
         instance->protocol->lastActivity = millis();
-        instance->protocol->setSessionTimeMs(instance->protocol->getSessionTimeMs());
         instance->protocol->config->save();
     }
 }

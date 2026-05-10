@@ -91,41 +91,48 @@ void NO2Protocol::processIncomingMessage() {
 }
 
 void NO2Protocol::updateCalculatedValues() {
-  // Calculate speed in km/h
-  speedKmh = 0.0f;
   static const float wheelCircumferenceMeters = (instrumentMsg.wheelDiameter / 10.0f) * 0.0254f * PI * 3.6f;
   static unsigned long lastMeasurementTime = 0;
+  
+  unsigned long currentMillis = millis();
+  unsigned long deltaMillis = lastMeasurementTime > 0 ? (currentMillis - lastMeasurementTime) : 0;
 
+  // Calculate speed in km/h
+  speedKmh = 0.0f;
+  
   if (controllerMsg.speedFeedback > 0 && controllerMsg.speedFeedback < 0x7530) {
     // Calculate speed in km/h
     speedKmh = wheelCircumferenceMeters * (1000.0f / (controllerMsg.speedFeedback * (32 / instrumentMsg.motorPoleCount)));
     if (speedKmh > 0.0f) {
-      lastActivity = millis();
+      lastActivity = currentMillis;
     }
+  }
+
+  if (speedKmh > 0.0f) {
+    config->setSessionTimeMs(config->getSessionTimeMs() + deltaMillis);
   }
 
   // Calculate current and cumulative Ah
   uint8_t currentUnit = (controllerMsg.runningCurrent >> 8) & 0x40;
   current = (float)(controllerMsg.runningCurrent & 0xFF) / (currentUnit ? 10.0f : 1.0f);
   if (controllerMsg.controllerStatus2 & STATUS2_BRAKE_ACTIVE) {
-    config->setCumulativeAh(config->getCumulativeAh() - current * (millis() - lastMeasurementTime) / 3600000.0f); // Ah (regenerative braking)
+    config->setCumulativeAh(config->getCumulativeAh() - current * deltaMillis / 3600000.0f); // Ah (regenerative braking)
   } else {
-    config->setCumulativeAh(config->getCumulativeAh() + current * (millis() - lastMeasurementTime) / 3600000.0f); // Ah
+    config->setCumulativeAh(config->getCumulativeAh() + current * deltaMillis / 3600000.0f); // Ah
   }
   if (!unlimitedMode && current > 5) {
     current = 5;
   }
 
   // Update trip meter (in cm)
-  config->setTripMeter(config->getTripMeter() + (unsigned long)(speedKmh * 100.0f / 3600.0f * (millis() - lastMeasurementTime)));
+  config->setTripMeter(config->getTripMeter() + (unsigned long)(speedKmh * 100.0f / 3600.0f * deltaMillis));
   
   if (config->getTripMeter() - lastOdometerUpdateTripMeter >= 100000) {
     lastOdometerUpdateTripMeter = config->getTripMeter() - (config->getTripMeter() % 100000);
-    setSessionTimeMs(getSessionTimeMs());
     config->setOdometer(config->getOdometer() + 1);
   }
 
-  lastMeasurementTime = millis();
+  lastMeasurementTime = currentMillis;
 }
 
 void NO2Protocol::sendInstrumentMessage() {

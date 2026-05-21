@@ -2,8 +2,6 @@
 
 Buttons* Buttons::instance = nullptr;
 
-extern volatile unsigned long timer0_millis;
-
 Buttons::Buttons(NO2Protocol* protocol) : protocol(protocol) {
     instance = this;
 }
@@ -51,9 +49,6 @@ void Buttons::buttonDownClick(Button2& btn) {
 void Buttons::buttonMTripleClick(Button2& btn) {
     if (instance && instance->protocol) {
         // Reset in-memory values
-        noInterrupts ();
-        timer0_millis = 5000;
-        interrupts ();
         instance->protocol->lastActivity = millis();
         instance->protocol->setCumulativeAh(0.0f);
         instance->protocol->setTripMeter(0);

@@ -95,7 +95,10 @@ void NO2Protocol::updateCalculatedValues() {
   static unsigned long lastMeasurementTime = 0;
   
   unsigned long currentMillis = millis();
-  unsigned long deltaMillis = lastMeasurementTime > 0 ? (currentMillis - lastMeasurementTime) : 0;
+  unsigned long deltaMillis = 0;
+  if (lastMeasurementTime > 0 && currentMillis >= lastMeasurementTime) {
+    deltaMillis = currentMillis - lastMeasurementTime;
+  }
 
   // Calculate speed in km/h
   speedKmh = 0.0f;

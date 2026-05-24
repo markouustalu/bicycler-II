@@ -20,18 +20,31 @@ The screen has pretty much everything put on the single view. Nothing else is im
 
 ## Features
 
-- Communicates with e-bike controller using the NO2 protocol (see `docs/NO2 Protocol.md`)
-- Displays real-time data (speed, current, PAS level, etc.) on an OLED screen
-- Button interface for user input (PAS level, unlimited mode, etc.)
-- Persistent configuration storage (wheel diameter, odometer, etc.)
-- Modular code structure for easy extension
+- **NO2 Protocol Communication:** Exchanged data packets with Sabvoton SVMC controllers (see `docs/NO2 Protocol.md`).
+- **Telemetry & Real-Time Dashboard:** Shows speed (km/h), pedal assist (PAS) level, motor temperature (°C), live wattage (calculated using a hardcoded 50V), uptime, trip distance, and odometer.
+- **Regenerative Braking Integration:** Accumulates and drains Ampere-hours (Ah) dynamically based on running current; when regenerative braking is active (`STATUS2_BRAKE_ACTIVE`), it subtracts the regenerated power from the cumulative usage.
+- **EEPROM Wear-Leveling Config:** Prevents wearing out the Arduino Nano's EEPROM cell. Saves trip statistics (odometer, cumulative Ah, trip distance, and elapsed time) in a circular wear-leveling array of 10 slots.
+- **Display Timeout & Power Saving:** Dimming feature that sets OLED contrast to 0 to prevent burn-in if there is no serial activity for 5 seconds, returning to full contrast (255) when activity resumes.
+- **Modular Code Structure:** Easily extensible firmware split cleanly into Display, Buttons, Config, and Protocol layers.
+
+## Interactive Controls (Button Setup)
+
+The display uses 3 buttons (Up, Down, Menu/M) via the `Button2` library, offering the following controls:
+
+| Button Action | Function | Details |
+| --- | --- | --- |
+| **Up (Single Click)** | Increase PAS Level | Increments the assist level set point sent to the controller. |
+| **Down (Single Click)** | Decrease PAS Level | Decrements the assist level set point sent to the controller. |
+| **Up (Triple Click)** | Activate **Unlimited Mode** | Only active during the first **5 seconds** after power-on. Unlocks maximum assist levels up to 15, selects electric drive mode, and bypasses the 25km/h speed limit. To deactivate, power cycle the e-bike. |
+| **Menu (Double Click)** | Reset Trip Stats | Resets session elapsed time, trip distance, and cumulative Ah used to zero. |
+| **Menu (Triple Click)** | Manual EEPROM Save | Forces an immediate write of current session statistics (odometer, cumulative Ah, trip meter, session time) to EEPROM wear-leveling storage. |
 
 ## Hardware
 
-- Arduino Nano (ATmega328)
-- OLED display (SSD1306/SSD1309, via U8g2/Adafruit libraries)
-- Buttons (Up, Down, Menu)
-- Serial connection to e-bike controller
+- **Arduino Nano** (ATmega328p)
+- **OLED Display** (SSD1309 128x64 display configured in 90-degree portrait rotation, using the robust `U8g2` library in full buffer mode)
+- **3x Tactile Buttons** (Up, Down, Menu/M)
+- **Serial Interface** (SoftwareSerial on pins 7 (Rx) and 9 (Tx) configured at 9600 baud for controller communication)
 
 ## Directory Structure
 

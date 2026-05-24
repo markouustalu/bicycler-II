@@ -48,19 +48,19 @@ void Buttons::buttonDownClick(Button2& btn) {
 
 void Buttons::buttonMTripleClick(Button2& btn) {
     if (instance && instance->protocol) {
+        // Trigger EEPROM save of current values
+        instance->protocol->lastActivity = millis();
+        instance->protocol->config->save();
+    }
+}
+
+void Buttons::buttonMDoubleClick(Button2& btn) {
+    if (instance && instance->protocol) {
         // Reset in-memory values
         instance->protocol->lastActivity = millis();
         instance->protocol->setCumulativeAh(0.0f);
         instance->protocol->setTripMeter(0);
         instance->protocol->setSessionTimeMs(0);
         instance->protocol->stateChanged = true;
-    }
-}
-
-void Buttons::buttonMDoubleClick(Button2& btn) {
-    if (instance && instance->protocol) {
-        // Trigger EEPROM save of current values
-        instance->protocol->lastActivity = millis();
-        instance->protocol->config->save();
     }
 }

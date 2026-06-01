@@ -1,8 +1,8 @@
 #include "NO2Protocol.h"
 
 NO2Protocol::NO2Protocol() :
-  serial(nullptr),
   config(nullptr),
+  serial(nullptr),
   speedKmh(0.0f),
   current(0.0f),
   driveMode(0),
@@ -117,7 +117,7 @@ void NO2Protocol::updateCalculatedValues() {
 
   // Calculate current and cumulative Ah
   uint8_t currentUnit = (controllerMsg.runningCurrent >> 8) & 0x40;
-  current = (float)(controllerMsg.runningCurrent & 0xFF) / (currentUnit ? 10.0f : 1.0f);
+  current = ((float)(controllerMsg.runningCurrent & 0x3FFF) / (currentUnit ? 10.0f : 1.0f)) * CURRENT_CALIBRATION_FACTOR;
   if (controllerMsg.controllerStatus2 & STATUS2_BRAKE_ACTIVE) {
     config->setCumulativeAh(config->getCumulativeAh() - current * deltaMillis / 3600000.0f); // Ah (regenerative braking)
   } else {

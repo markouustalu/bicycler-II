@@ -67,6 +67,11 @@ struct InstrumentMessage {
 #define CONTROLLER_CRUISE_HOLD_MODE       0x02
 #define CONTROLLER_CRUISE_SWITCH_MODE     0x01
 
+// Calibration settings
+// Adjust this factor to calibrate the controller's current and Ah tracking against your BMS
+// E.g., if the display reports 25.25Ah but the BMS shows ~40Ah was used, set this to 1.58f (40.0 / 25.25)
+#define CURRENT_CALIBRATION_FACTOR        1.58f 
+
 class Config; // Forward declaration
 
 class NO2Protocol {

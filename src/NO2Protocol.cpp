@@ -119,10 +119,10 @@ void NO2Protocol::updateCalculatedValues() {
   uint8_t currentUnit = (controllerMsg.runningCurrent >> 8) & 0x40;
   current = ((float)(controllerMsg.runningCurrent & 0x3FFF) / (currentUnit ? 10.0f : 1.0f)) * CURRENT_CALIBRATION_FACTOR;
   if (controllerMsg.controllerStatus2 & STATUS2_BRAKE_ACTIVE) {
-    config->setCumulativeAh(config->getCumulativeAh() - current * deltaMillis / 3600000.0f); // Ah (regenerative braking)
-  } else {
-    config->setCumulativeAh(config->getCumulativeAh() + current * deltaMillis / 3600000.0f); // Ah
+    current = -current; // Negative current for regenerative braking
   }
+  config->setCumulativeAh(config->getCumulativeAh() + current * deltaMillis / 3600000.0f); // Ah
+
   if (!unlimitedMode && current > 5) {
     current = 5;
   }

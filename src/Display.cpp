@@ -91,17 +91,21 @@ void Display::loop() {
     case 4:
 
         //temp debugging. display controller processed messager per second.
-        u8g2->setFont(u8g2_font_profont12_mr);
+        /* u8g2->setFont(u8g2_font_profont12_mr);
         u8g2->drawStr(0, 92, u8x8_u16toa(protocol->getMessagesPerSecond(), 1));
-        u8g2->setFont(u8g2_font_profont22_mn);
-        //u8g2->drawStr(6, 95, u8x8_u16toa((int)(protocol->baudRate), 5));
-        //u8g2->drawStr(6, 95, u8x8_u16toa((int)(protocol->serial->available()), 5));
-
+        u8g2->setFont(u8g2_font_profont22_mn); */
+        
         //Wattage. It is a 14S Li-ion battery so max 58.8V. Assume for now that the V is average 50V
         u8g2->setFont(u8g2_font_profont22_mn);
         if (protocol->unlimitedMode) {
+            if (protocol->getCurrent() < 0) {
+                u8g2->drawStr(-1, 95, "-");
+            }
             u8g2->drawStr(9, 95, u8x8_u16toa((int)(protocol->getCurrent() * 50), 4));
         } else {
+            if (protocol->getCurrent() < 0) {
+                u8g2->drawStr(5, 95, "-");
+            }
             u8g2->drawStr(15, 95, u8x8_u16toa((int)(protocol->getCurrent() * 50), 3));
         }
 

@@ -89,30 +89,34 @@ void Display::loop() {
         updateState++;
         break;
     case 4:
+        {
+            //temp debugging. display controller processed messager per second.
+            /* u8g2->setFont(u8g2_font_profont12_mr);
+            u8g2->drawStr(0, 92, u8x8_u16toa(protocol->getMessagesPerSecond(), 1));
+            u8g2->setFont(u8g2_font_profont22_mn); */
+            
+            //Wattage. It is a 14S Li-ion battery so max 58.8V. Assume for now that the V is average 52V
+            u8g2->setFont(u8g2_font_profont22_mn);
+            int wattage = (int)(protocol->getCurrent() * 52);
+            if (wattage < 0) {
+                wattage = -wattage;
+            }
+            if (protocol->unlimitedMode) {
+                if (protocol->getCurrent() < 0) {
+                    u8g2->drawStr(-1, 95, "-");
+                }
+                u8g2->drawStr(9, 95, u8x8_u16toa(wattage, 4));
+            } else {
+                if (protocol->getCurrent() < 0) {
+                    u8g2->drawStr(5, 95, "-");
+                }
+                u8g2->drawStr(15, 95, u8x8_u16toa(wattage, 3));
+            }
 
-        //temp debugging. display controller processed messager per second.
-        /* u8g2->setFont(u8g2_font_profont12_mr);
-        u8g2->drawStr(0, 92, u8x8_u16toa(protocol->getMessagesPerSecond(), 1));
-        u8g2->setFont(u8g2_font_profont22_mn); */
-        
-        //Wattage. It is a 14S Li-ion battery so max 58.8V. Assume for now that the V is average 50V
-        u8g2->setFont(u8g2_font_profont22_mn);
-        if (protocol->unlimitedMode) {
-            if (protocol->getCurrent() < 0) {
-                u8g2->drawStr(-1, 95, "-");
-            }
-            u8g2->drawStr(9, 95, u8x8_u16toa((int)(protocol->getCurrent() * 50), 4));
-        } else {
-            if (protocol->getCurrent() < 0) {
-                u8g2->drawStr(5, 95, "-");
-            }
-            u8g2->drawStr(15, 95, u8x8_u16toa((int)(protocol->getCurrent() * 50), 3));
+            //Separator lines
+            u8g2->drawHLine(0, 79, 64);
+            u8g2->drawHLine(0, 96, 64);
         }
-
-        //Separator lines
-        u8g2->drawHLine(0, 79, 64);
-        u8g2->drawHLine(0, 96, 64);
-        
         updateState++;
         break;
     case 5:

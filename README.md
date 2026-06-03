@@ -13,7 +13,7 @@ The screen has pretty much everything put on the single view. Nothing else is im
 
 1. Speed in km/h (not configurable, change programming if needed)
 2. PAS lvl and motor temp in C (not configrable, change programming if needed)
-3. Wattage. Voltage is hard coded in at 50V. Change or adapt if needed.
+3. Wattage. Voltage is hard coded in at 52V. Change or adapt if needed.
 4. Avg speed in kmh since boot and used Ah since boot
 5. Time since last boot
 6. Odometer (stored in flash) and trip meter (zeroed every boot)
@@ -21,7 +21,7 @@ The screen has pretty much everything put on the single view. Nothing else is im
 ## Features
 
 - **NO2 Protocol Communication:** Exchanged data packets with Sabvoton SVMC controllers (see `docs/NO2 Protocol.md`).
-- **Telemetry & Real-Time Dashboard:** Shows speed (km/h), pedal assist (PAS) level, motor temperature (°C), live wattage (calculated using a hardcoded 50V), uptime, trip distance, and odometer.
+- **Telemetry & Real-Time Dashboard:** Shows speed (km/h), pedal assist (PAS) level, motor temperature (°C), live wattage (calculated using a hardcoded 52V), uptime, trip distance, and odometer.
 - **Regenerative Braking Integration:** Accumulates and drains Ampere-hours (Ah) dynamically based on running current; when regenerative braking is active (`STATUS2_BRAKE_ACTIVE`), it subtracts the regenerated power from the cumulative usage.
 - **EEPROM Wear-Leveling Config:** Prevents wearing out the Arduino Nano's EEPROM cell. Saves trip statistics (odometer, cumulative Ah, trip distance, and elapsed time) in a circular wear-leveling array of 10 slots.
 - **Display Timeout & Power Saving:** Dimming feature that sets OLED contrast to 0 to prevent burn-in if there is no serial activity for 5 seconds, returning to full contrast (255) when activity resumes.
